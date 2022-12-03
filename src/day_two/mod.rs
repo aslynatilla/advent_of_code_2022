@@ -21,9 +21,26 @@ fn line_to_round_description() -> RoundDescription {
     todo!()
 }
 
-#[allow(unused_variables)]
 fn round_score(round: &RoundDescription) -> u32 {
-    todo!()
+    let our_shape_score = match &round.ours {
+        HandShape::Rock => 1u32,
+        HandShape::Paper => 2u32,
+        HandShape::Scissors => 3u32,
+    };
+
+    let our_outcome_score = match (&round.theirs, &round.ours) {
+        (HandShape::Rock, HandShape::Paper)
+        | (HandShape::Paper, HandShape::Scissors)
+        | (HandShape::Scissors, HandShape::Rock) => 6u32,
+
+        (HandShape::Rock, HandShape::Rock)
+        | (HandShape::Paper, HandShape::Paper)
+        | (HandShape::Scissors, HandShape::Scissors) => 3u32,
+
+        _ => 0u32,
+    };
+
+    our_shape_score + our_outcome_score
 }
 
 fn solution() {

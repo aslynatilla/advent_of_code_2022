@@ -1,6 +1,6 @@
-mod day_one;
+// This allows not to worry about the code from past days.
+#![allow(dead_code)]
 
-fn main() {
-    let (result_1, result_2) = day_one::solution("assets/input.txt");
-    println!("{}, {}", result_1, result_2);
-}
+mod day_two;
+
+fn main() {}

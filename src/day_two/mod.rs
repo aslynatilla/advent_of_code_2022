@@ -35,11 +35,53 @@ struct RoundDescription {
     ours: HandShape,
 }
 
+#[derive(Debug, PartialEq)]
+enum RoundResult {
+    Lose,
+    Draw,
+    Win,
+}
+
+impl From<RoundResult> for u32 {
+    fn from(result: RoundResult) -> Self {
+        match result {
+            RoundResult::Lose => 0u32,
+            RoundResult::Draw => 3u32,
+            RoundResult::Win => 6u32,
+        }
+    }
+}
+
 impl RoundDescription {
     fn new(first: HandShape, second: HandShape) -> RoundDescription {
         RoundDescription {
             theirs: first,
             ours: second,
+        }
+    }
+
+    fn from_result(result: RoundResult, theirs: HandShape) -> RoundDescription {
+        let ours = [HandShape::Paper, HandShape::Rock, HandShape::Scissors]
+            .into_iter()
+            .find(|&our_shape| RoundDescription::new(theirs, our_shape).compute_score() == result)
+            .expect("There always is a valid result.");
+
+        RoundDescription { theirs, ours }
+    }
+
+    fn compute_score(&self) -> RoundResult {
+        match (self.ours, self.theirs) {
+            (HandShape::Rock, HandShape::Rock) => RoundResult::Draw,
+            (HandShape::Paper, HandShape::Paper) => RoundResult::Draw,
+            (HandShape::Scissors, HandShape::Scissors) => RoundResult::Draw,
+
+            (HandShape::Rock, HandShape::Paper) => RoundResult::Lose,
+            (HandShape::Paper, HandShape::Scissors) => RoundResult::Lose,
+            (HandShape::Scissors, HandShape::Rock) => RoundResult::Lose,
+
+            (HandShape::Paper, HandShape::Rock) => RoundResult::Win,
+            (HandShape::Rock, HandShape::Scissors) => RoundResult::Win,
+            (HandShape::Scissors, HandShape::Paper) => RoundResult::Win,
         }
     }
 }
@@ -58,32 +100,16 @@ fn line_to_round_description(line: &str) -> RoundDescription {
     )
 }
 
-fn round_score(round: &RoundDescription) -> u32 {
+fn round_score(round: RoundDescription) -> u32 {
     let our_shape_score = match &round.ours {
         HandShape::Rock => 1u32,
         HandShape::Paper => 2u32,
         HandShape::Scissors => 3u32,
     };
 
-    let our_outcome_score = match (&round.theirs, &round.ours) {
-        (HandShape::Rock, HandShape::Paper)
-        | (HandShape::Paper, HandShape::Scissors)
-        | (HandShape::Scissors, HandShape::Rock) => 6u32,
-
-        (HandShape::Rock, HandShape::Rock)
-        | (HandShape::Paper, HandShape::Paper)
-        | (HandShape::Scissors, HandShape::Scissors) => 3u32,
-
-        _ => 0u32,
-    };
+    let our_outcome_score: u32 = round.compute_score().into();
 
     our_shape_score + our_outcome_score
-}
-
-enum RoundResult {
-    Lose,
-    Draw,
-    Win,
 }
 
 fn result_and_their_move_to_round_description(result: &str, theirs: &str) -> RoundDescription {
@@ -94,26 +120,9 @@ fn result_and_their_move_to_round_description(result: &str, theirs: &str) -> Rou
         _ => panic!("Unexpected string in input line"),
     };
 
-    let their_shape = match theirs {
-        "A" => HandShape::Rock,
-        "B" => HandShape::Paper,
-        "C" => HandShape::Scissors,
-        _ => panic!("Unexpected string in input line"),
-    };
+    let their_shape = HandShape::from_string_slice(theirs);
 
-    let right_move = match (their_shape, expected_result) {
-        (HandShape::Rock, RoundResult::Lose) => HandShape::Scissors,
-        (HandShape::Rock, RoundResult::Draw) => HandShape::Rock,
-        (HandShape::Rock, RoundResult::Win) => HandShape::Paper,
-        (HandShape::Paper, RoundResult::Lose) => HandShape::Rock,
-        (HandShape::Paper, RoundResult::Draw) => HandShape::Paper,
-        (HandShape::Paper, RoundResult::Win) => HandShape::Scissors,
-        (HandShape::Scissors, RoundResult::Lose) => HandShape::Paper,
-        (HandShape::Scissors, RoundResult::Draw) => HandShape::Scissors,
-        (HandShape::Scissors, RoundResult::Win) => HandShape::Rock,
-    };
-
-    RoundDescription::new(their_shape, right_move)
+    RoundDescription::from_result(expected_result, their_shape)
 }
 
 pub fn solution() -> (u32, u32) {
@@ -125,7 +134,7 @@ pub fn solution() -> (u32, u32) {
     let shape_against_shape_score = input_data
         .lines()
         .map(line_to_round_description)
-        .map(|line| round_score(&line))
+        .map(round_score)
         .sum();
 
     let shape_and_result_score = input_data
@@ -137,7 +146,7 @@ pub fn solution() -> (u32, u32) {
                 line.first().expect("Wrong format"),
             )
         })
-        .map(|r| round_score(&r))
+        .map(round_score)
         .sum();
 
     (shape_against_shape_score, shape_and_result_score)
@@ -155,9 +164,9 @@ mod tests_day_two {
         let second_round = RoundDescription::new(HandShape::Paper, HandShape::Rock);
         let third_round = RoundDescription::new(HandShape::Scissors, HandShape::Scissors);
 
-        assert_eq!(round_score(&first_round), 8);
-        assert_eq!(round_score(&second_round), 1);
-        assert_eq!(round_score(&third_round), 6);
+        assert_eq!(round_score(first_round), 8);
+        assert_eq!(round_score(second_round), 1);
+        assert_eq!(round_score(third_round), 6);
     }
 
     #[test]

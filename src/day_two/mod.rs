@@ -7,6 +7,28 @@ enum HandShape {
     Scissors,
 }
 
+impl TryFrom<&str> for HandShape {
+    type Error = &'static str;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "A" | "X" => Ok(HandShape::Rock),
+            "B" | "Y" => Ok(HandShape::Paper),
+            "C" | "Z" => Ok(HandShape::Scissors),
+            _ => Err("Unexpected string in input line"),
+        }
+    }
+}
+
+impl HandShape {
+    fn from_string_slice(value: &str) -> Self {
+        match Self::try_from(value) {
+            Ok(shape) => shape,
+            Err(error_str) => panic!("{}", error_str),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 struct RoundDescription {
     theirs: HandShape,
@@ -25,12 +47,7 @@ impl RoundDescription {
 fn line_to_round_description(line: &str) -> RoundDescription {
     let handshapes = line
         .split(char::is_whitespace)
-        .map(|s| match s {
-            "A" | "X" => HandShape::Rock,
-            "B" | "Y" => HandShape::Paper,
-            "C" | "Z" => HandShape::Scissors,
-            _ => panic!("Unexpected string in input line"),
-        })
+        .map(HandShape::from_string_slice)
         .collect::<Vec<HandShape>>();
 
     assert!(handshapes.len() == 2);

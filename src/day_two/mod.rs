@@ -1,6 +1,6 @@
 use std::fs::read_to_string;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum HandShape {
     Rock,
     Paper,
@@ -23,7 +23,22 @@ impl RoundDescription {
 }
 
 fn line_to_round_description(line: &str) -> RoundDescription {
-    todo!()
+    let handshapes = line
+        .split(char::is_whitespace)
+        .map(|s| match s {
+            "A" | "X" => HandShape::Rock,
+            "B" | "Y" => HandShape::Paper,
+            "C" | "Z" => HandShape::Scissors,
+            _ => panic!("Unexpected string in input line"),
+        })
+        .collect::<Vec<HandShape>>();
+
+    assert!(handshapes.len() == 2);
+
+    RoundDescription::new(
+        *handshapes.first().expect("Line parsing error"),
+        *handshapes.last().expect("Line parsing error"),
+    )
 }
 
 fn round_score(round: &RoundDescription) -> u32 {
@@ -48,7 +63,7 @@ fn round_score(round: &RoundDescription) -> u32 {
     our_shape_score + our_outcome_score
 }
 
-fn solution() -> u32 {
+pub fn solution() -> u32 {
     let input_data = match read_to_string("assets/input_day_two.txt") {
         Ok(lines) => lines,
         Err(e) => panic!("Input file not placed correctly\nReported as: {}", e),

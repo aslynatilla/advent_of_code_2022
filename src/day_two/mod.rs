@@ -63,17 +63,67 @@ fn round_score(round: &RoundDescription) -> u32 {
     our_shape_score + our_outcome_score
 }
 
-pub fn solution() -> u32 {
+enum RoundResult {
+    Lose,
+    Draw,
+    Win,
+}
+
+fn result_and_their_move_to_round_description(result: &str, theirs: &str) -> RoundDescription {
+    let expected_result = match result {
+        "X" => RoundResult::Lose,
+        "Y" => RoundResult::Draw,
+        "Z" => RoundResult::Win,
+        _ => panic!("Unexpected string in input line"),
+    };
+
+    let their_shape = match theirs {
+        "A" => HandShape::Rock,
+        "B" => HandShape::Paper,
+        "C" => HandShape::Scissors,
+        _ => panic!("Unexpected string in input line"),
+    };
+
+    let right_move = match (their_shape, expected_result) {
+        (HandShape::Rock, RoundResult::Lose) => HandShape::Scissors,
+        (HandShape::Rock, RoundResult::Draw) => HandShape::Rock,
+        (HandShape::Rock, RoundResult::Win) => HandShape::Paper,
+        (HandShape::Paper, RoundResult::Lose) => HandShape::Rock,
+        (HandShape::Paper, RoundResult::Draw) => HandShape::Paper,
+        (HandShape::Paper, RoundResult::Win) => HandShape::Scissors,
+        (HandShape::Scissors, RoundResult::Lose) => HandShape::Paper,
+        (HandShape::Scissors, RoundResult::Draw) => HandShape::Scissors,
+        (HandShape::Scissors, RoundResult::Win) => HandShape::Rock,
+    };
+
+    RoundDescription::new(their_shape, right_move)
+}
+
+pub fn solution() -> (u32, u32) {
     let input_data = match read_to_string("assets/input_day_two.txt") {
         Ok(lines) => lines,
         Err(e) => panic!("Input file not placed correctly\nReported as: {}", e),
     };
 
-    input_data
+    let shape_against_shape_score = input_data
         .lines()
         .map(line_to_round_description)
         .map(|line| round_score(&line))
-        .sum()
+        .sum();
+
+    let shape_and_result_score = input_data
+        .lines()
+        .map(|s| s.split(char::is_whitespace).collect::<Vec<&str>>())
+        .map(|line| {
+            result_and_their_move_to_round_description(
+                line.last().expect("Wrong format"),
+                line.first().expect("Wrong format"),
+            )
+        })
+        .map(|r| round_score(&r))
+        .sum();
+
+    (shape_against_shape_score, shape_and_result_score)
 }
 
 #[cfg(test)]

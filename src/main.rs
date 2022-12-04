@@ -4,5 +4,5 @@
 mod day_two;
 
 fn main() {
-    println!("{}", day_two::solution())
+    println!("{:?}", day_two::solution())
 }

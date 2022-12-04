@@ -126,7 +126,7 @@ fn result_and_their_move_to_round_description(result: &str, theirs: &str) -> Rou
 }
 
 pub fn solution() -> (u32, u32) {
-    let input_data = match read_to_string("assets/input_day_two.txt") {
+    let input_data = match read_to_string("assets/input_d2.txt") {
         Ok(lines) => lines,
         Err(e) => panic!("Input file not placed correctly\nReported as: {}", e),
     };

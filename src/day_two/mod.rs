@@ -137,9 +137,13 @@ pub fn solution() -> (u32, u32) {
         .map(round_score)
         .sum();
 
-    let shape_and_result_score = input_data
+    let flattened_chars: Vec<_> = input_data
         .lines()
-        .map(|s| s.split(char::is_whitespace).collect::<Vec<&str>>())
+        .flat_map(|line| line.split(char::is_whitespace))
+        .collect();
+
+    let shape_and_result_score = flattened_chars
+        .chunks(2)
         .map(|line| {
             result_and_their_move_to_round_description(
                 line.last().expect("Wrong format"),

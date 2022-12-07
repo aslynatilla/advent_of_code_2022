@@ -1,5 +1,6 @@
 use std::{convert::TryFrom, fs::read_to_string, str::Lines};
 
+#[derive(Clone, Copy, PartialEq)]
 struct RucksackItem(char);
 
 impl TryFrom<char> for RucksackItem {
@@ -51,6 +52,11 @@ impl Rucksack {
         let half_size = sack_length / 2;
         (&self.items[0..half_size], &self.items[half_size..])
     }
+
+    fn out_of_place_item(&self) -> Option<RucksackItem> {
+        let (left, right) = self.compartments();
+        left.iter().find(|&item| right.contains(item)).copied()
+    }
 }
 
 struct RucksackList {
@@ -101,9 +107,43 @@ mod tests {
         assert!(characters
             .iter()
             .zip(expected_priorities.iter())
-            .all(|(char, &prio)| {
-                println!("{}", char.priority());
-                char.priority() == prio
-            }))
+            .all(|(char, &prio)| { char.priority() == prio }))
+    }
+
+    #[test]
+    fn out_of_place_items() {
+        let rucksacks: Vec<_> = vec![
+            "vJrwpWtwJgWrhcsFMMfFFhFp",
+            "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+            "PmmdzqPrVvPwwTWBwg",
+            "wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn",
+            "ttgJtRGJQctTZtZT",
+            "CrZsJsPPZsGzwwsLwLmpwMDw",
+            "CrZsJsPPZsGzwwALwLmpwMDw",
+        ]
+        .into_iter()
+        .map(super::Rucksack::from)
+        .collect();
+
+        assert!(rucksacks
+            .iter()
+            .zip(
+                vec![
+                    Some('p'),
+                    Some('L'),
+                    Some('P'),
+                    Some('v'),
+                    Some('t'),
+                    Some('s'),
+                    None
+                ]
+                .iter()
+            )
+            .all(
+                |(rucksack, &out_of_place_char)| rucksack.out_of_place_item()
+                    == out_of_place_char
+                        .map(super::RucksackItem::try_from)
+                        .map(Result::unwrap)
+            ))
     }
 }

@@ -1,16 +1,15 @@
-use std::{convert::TryFrom, fs::read_to_string, str::Lines};
+use itertools::Itertools;
+use std::{fs::read_to_string, str::Lines};
 
 #[derive(Clone, Copy, PartialEq)]
 struct RucksackItem(char);
 
-impl TryFrom<char> for RucksackItem {
-    type Error = String;
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
+impl From<char> for RucksackItem {
+    fn from(value: char) -> Self {
         if value.is_ascii_alphabetic() {
-            Ok(RucksackItem(value))
+            RucksackItem(value)
         } else {
-            Err(format!("Unexpected string: {}", value))
+            panic!("Unexpected string: {value}")
         }
     }
 }
@@ -20,16 +19,15 @@ impl RucksackItem {
         let a_prio: u64 = 'a'.to_ascii_lowercase().into();
         let uppercase_a_prio: u64 = 'A'.to_ascii_uppercase().into();
 
-        match self.0 {
-            ch @ 'a'..='z' => <char as Into<u64>>::into(ch.to_ascii_lowercase()) - a_prio + 1,
-            ch @ 'A'..='Z' => {
-                <char as Into<u64>>::into(ch.to_ascii_uppercase()) - uppercase_a_prio + 27
-            }
+        match self {
+            RucksackItem(ch @ 'a'..='z') => 1 + u64::from(*ch) - a_prio,
+            RucksackItem(ch @ 'A'..='Z') => 27 + u64::from(*ch) - uppercase_a_prio,
             _ => panic!("Unexpected input"),
         }
     }
 }
 
+#[derive(Clone)]
 struct Rucksack {
     items: Vec<RucksackItem>,
 }
@@ -37,10 +35,7 @@ struct Rucksack {
 impl From<&str> for Rucksack {
     fn from(line: &str) -> Self {
         Rucksack {
-            items: line
-                .chars()
-                .map(|ch| RucksackItem::try_from(ch).unwrap())
-                .collect(),
+            items: line.chars().map(RucksackItem::from).collect(),
         }
     }
 }
@@ -56,6 +51,20 @@ impl Rucksack {
     fn out_of_place_item(&self) -> Option<RucksackItem> {
         let (left, right) = self.compartments();
         left.iter().find(|&item| right.contains(item)).copied()
+    }
+}
+
+impl IntoIterator for Rucksack {
+    type Item = char;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items
+            .into_iter()
+            .map(|item| item.0)
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }
 
@@ -82,16 +91,43 @@ impl IntoIterator for RucksackList {
 }
 
 pub fn solution() -> (u64, u64) {
-    let result = 0u64;
-
-    let _list: RucksackList = match read_to_string("assets/input_d3.txt") {
+    let list: RucksackList = match read_to_string("assets/input_d3.txt") {
         Ok(data) => data,
         Err(e) => panic!("Input file not placed correctly\nReported as: {}", e),
     }
     .lines()
     .into();
 
-    (result, 0u64)
+    let rucksacks: Vec<_> = list.into_iter().collect();
+    let first_part_result = rucksacks
+        .iter()
+        .map(|rucksack| rucksack.out_of_place_item())
+        .map(|item| item.map_or(0, |i| i.priority()))
+        .sum();
+
+    let rucksack_chunks = rucksacks.iter().chunks(3);
+    let mut second_part_result = 0u64;
+    for chunk in &rucksack_chunks {
+        let three_sacks: Vec<_> = chunk.collect();
+        second_part_result += three_sacks[0]
+            .clone()
+            .into_iter()
+            .find(|first_ch| {
+                three_sacks[1]
+                    .clone()
+                    .into_iter()
+                    .any(|char| char.eq(first_ch))
+                    && three_sacks[2]
+                        .clone()
+                        .into_iter()
+                        .any(|char| char.eq(first_ch))
+            })
+            .map(RucksackItem::from)
+            .map(|x| x.priority())
+            .unwrap();
+    }
+
+    (first_part_result, second_part_result)
 }
 
 mod tests {

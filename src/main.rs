@@ -4,5 +4,6 @@
 mod day_3;
 
 fn main() {
-    let _ = day_3::solution();
+    let (first_result, second_result) = day_3::solution();
+    println!("{first_result} and {second_result}");
 }
